@@ -1,32 +1,12 @@
+import argparse,sys
 from pathlib import Path
-import argparse
-import sys
-
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
-
-from twentyq.knowledge import KnowledgeBase
-from twentyq.ollama_client import enrich_concept
-
-def main():
-    parser = argparse.ArgumentParser(description="Add a word using Ollama/Mistral.")
-    parser.add_argument("word", help="English word or concept to enrich")
-    parser.add_argument("--model", default=None, help="Ollama model name (default: mistral)")
-    args = parser.parse_args()
-
-    print(f"Generating attributes for {args.word!r}...")
-    attrs = enrich_concept(args.word, args.model)
-    print("\nGenerated properties:")
-    for key, value in attrs.items():
-        print(f"  {key}: {value}")
-
-    confirm = input("\nSave these AI-generated properties? (y/n): ").strip().lower()
-    if confirm in {"y", "yes"}:
-        kb = KnowledgeBase()
-        kb.upsert(args.word, attrs, source="ollama-generated", confidence=0.55)
-        print("Saved to SQLite.")
-    else:
-        print("Not saved.")
-
-if __name__ == "__main__":
-    main()
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
+from twentyq.knowledge import KnowledgeBase,normalize_word
+from twentyq.ollama_client import enrich
+p=argparse.ArgumentParser(); p.add_argument("word"); p.add_argument("--model")
+a=p.parse_args(); word=normalize_word(a.word); kb=KnowledgeBase()
+try:
+    attrs=enrich(word,a.model); kb.upsert(word,attrs,"ollama",.72)
+    print("Added/updated:",word)
+    print("AI properties are estimates; review with scripts/show_concept.py",word)
+finally:kb.close()

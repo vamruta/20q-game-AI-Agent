@@ -1,100 +1,41 @@
-# 20Q AI — initial Python implementation
+# 20Q AI — Version 2.0
 
-A hybrid 20 Questions game: deterministic candidate filtering + information-gain question selection, with optional Ollama/Mistral semantic enrichment.
+Python 3.10+. The core game uses only the Python standard library.
 
-## What works in this starter
-
-- Terminal-playable guessing game.
-- SQLite knowledge base.
-- Information-gain question selection.
-- `yes`, `no`, `sometimes`, and `unknown` answers.
-- Optional Mistral/Ollama enrichment for new words.
-- Optional WordNet vocabulary export.
-- A small seed knowledge base so the game runs immediately.
-
-## Important scope note
-
-A dictionary is a vocabulary, not a complete set of facts. This starter can *store* a large dictionary vocabulary, but only words with useful semantic attributes can be reliably guessed. The included seed database is intentionally small. The next development step is to enrich more WordNet words, review uncertain attributes, and add more question dimensions.
-
-Mistral-generated facts can be wrong. The game stores `null` for uncertain attributes and treats those as unknown rather than confidently eliminating a candidate.
-
-## Requirements
-
-- Python 3.10+
-- Optional: Ollama installed and running, with a model such as `mistral` pulled.
-- Optional: NLTK + WordNet corpus for vocabulary export.
-
-## Run the game
-
-From this directory:
-
-```bash
+## Run
+```powershell
 python -m twentyq
 ```
 
-## Enrich a word with Ollama
+## Keep your old database
+Copy your v1 `knowledge.db` into this project's `data` folder before first run:
+```powershell
+New-Item -ItemType Directory -Force data
+Copy-Item "data\knowledge.db"
+python -m twentyq
+```
+Version 2 adds tables if needed and preserves existing concept rows.
 
-Start Ollama, then:
-
-```bash
+## Optional Ollama learning
+```powershell
 ollama pull mistral
-pip install -r requirements-ollama.txt
-python scripts/enrich_word.py "helicopter"
+python scripts/enrich_word.py telescope
+```
+Ollama must be running locally. Default model is `mistral`; set `$env:OLLAMA_MODEL` to change it.
+
+## Tests
+```powershell
+python -m unittest discover -s tests -v
 ```
 
-The generated properties are saved in `data/knowledge.db`. The script asks Mistral for JSON and validates the response shape. It cannot guarantee factual correctness.
+Answers: `yes`, `probably yes`, `sometimes`, `probably no`, `no`, `unknown`.
+Unknown properties are not treated as false. Scores are relative rankings, not calibrated probabilities.
 
-You can configure another Ollama model:
+## Regression tests with interaction logs
 
-```bash
-OLLAMA_MODEL=mistral python scripts/enrich_word.py "gyroscope"
+Run this from the project folder in PowerShell:
+```powershell
+python -m unittest discover -s tests -p "test_v2_with_logs.py" -v
 ```
 
-## Build a larger vocabulary list with WordNet
-
-```bash
-pip install -r requirements-wordnet.txt
-python scripts/export_wordnet.py
-```
-
-This exports normalized single-word English lemmas to `data/wordnet_words.txt`. It does **not** automatically make every word guessable: words still need semantic properties.
-
-## Project layout
-
-```text
-20q-ai/
-├── twentyq/
-│   ├── __init__.py
-│   ├── __main__.py
-│   ├── game.py
-│   ├── knowledge.py
-│   ├── questions.py
-│   └── ollama_client.py
-├── scripts/
-│   ├── enrich_word.py
-│   └── export_wordnet.py
-├── tests/
-│   └── test_engine.py
-├── data/                 # created automatically
-├── requirements-ollama.txt
-├── requirements-wordnet.txt
-└── README.md
-```
-
-## Current algorithm
-
-For each unused question/property, the engine partitions remaining candidates into yes/no/unknown groups. It estimates the expected reduction in uncertainty and favors questions that split the known candidates evenly while covering a large fraction of the candidate set.
-
-Unknown properties are not treated as "no". They remain possible after either answer, which is safer but can make the candidate set shrink more slowly.
-
-## Android plan
-
-Do not package Ollama into the first APK. First make the engine reliable. Then:
-
-1. Add a Kivy UI around `GameSession`.
-2. Keep SQLite locally on the phone.
-3. For a connected-AI version, let the phone call Ollama on a PC over the same Wi-Fi network.
-4. For fully offline Android AI, investigate a mobile inference runtime (for example llama.cpp) separately. Ollama itself is not a drop-in Android APK dependency.
-5. Package the Kivy app with Buildozer on Linux (or WSL2).
-
-The game engine is deliberately independent of Kivy so the UI can be replaced without rewriting the guessing logic.
+The test file appends structured events to `logs/test_interactions.jsonl` and a readable transcript to `logs/test_transcripts.txt`. It records simulated questions/answers, normalization results, candidate weights, migration checks, and the scripted game output. Logs persist between runs; review them before sharing.

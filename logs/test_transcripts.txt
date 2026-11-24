@@ -1,0 +1,40 @@
+
+=== SCRIPTED GAME ===
+[INPUT] [yes/probably yes/sometimes/probably no/no/unknown] unknown
+[INPUT] [yes/probably yes/sometimes/probably no/no/unknown] unknown
+[INPUT] [yes/probably yes/sometimes/probably no/no/unknown] unknown
+[INPUT] [yes/probably yes/sometimes/probably no/no/unknown] unknown
+[INPUT] [yes/probably yes/sometimes/probably no/no/unknown] unknown
+[INPUT] Was one of these your answer? Enter its number, or 0: 0
+[INPUT] 
+What were you thinking of? telescope
+[GAME OUTPUT]
+
+=== 20Q AI — Version 2.0 ===
+Knowledge base: 21 described concepts
+Think of something. Answers: yes / probably yes / sometimes / probably no / no / unknown.
+
+Question 1/20: Can one person normally carry it?
+  (best candidate: telescope; 21 candidates with non-trivial weight)
+
+Question 2/20: Is it made by humans?
+  (best candidate: telescope; 21 candidates with non-trivial weight)
+
+Question 3/20: Is it a vehicle?
+  (best candidate: telescope; 21 candidates with non-trivial weight)
+
+Question 4/20: Does it use electricity or electronics?
+  (best candidate: telescope; 21 candidates with non-trivial weight)
+
+Question 5/20: Is it a tool?
+  (best candidate: telescope; 21 candidates with non-trivial weight)
+
+My best remaining guesses:
+  1. telescope  (relative score 95.0%)
+  2. airplane  (relative score 90.0%)
+  3. apple  (relative score 90.0%)
+  4. bicycle  (relative score 90.0%)
+  5. boat  (relative score 90.0%)
+'telescope' is already known as 'telescope'.
+No obvious property conflict found.
+

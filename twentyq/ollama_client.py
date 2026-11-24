@@ -1,57 +1,19 @@
-"""Optional Mistral/Ollama semantic enrichment."""
-from __future__ import annotations
-import json
-import os
+import json, os, urllib.request, urllib.error
 from .questions import QUESTIONS
 
-def enrich_concept(word: str, model: str | None = None) -> dict:
+def enrich(word, model=None):
+    model=model or os.getenv("OLLAMA_MODEL","mistral")
+    url=os.getenv("OLLAMA_URL","http://localhost:11434").rstrip("/")
+    keys={k:"true, false, or null" for k in QUESTIONS}
+    prompt=("Return only JSON with an 'attributes' object. For concept "+repr(word)+
+      ", assign true/false only when generally accurate, otherwise null. Keys: "+json.dumps(keys))
+    data=json.dumps({"model":model,"prompt":prompt,"stream":False,"format":"json",
+                     "options":{"temperature":0.1}}).encode()
+    req=urllib.request.Request(url+"/api/generate",data=data,headers={"Content-Type":"application/json"})
     try:
-        import ollama
-    except ImportError as exc:
-        raise RuntimeError(
-            "Ollama Python package missing. Run: pip install -r requirements-ollama.txt"
-        ) from exc
-
-    model = model or os.getenv("OLLAMA_MODEL", "mistral")
-    properties = list(QUESTIONS)
-    schema = {
-        "type": "object",
-        "properties": {key: {"type": ["boolean", "null"]} for key in properties},
-        "required": properties,
-        "additionalProperties": False,
-    }
-
-    response = ollama.chat(
-        model=model,
-        messages=[
-            {
-                "role": "system",
-                "content": (
-                    "You create cautious factual attributes for a 20 Questions game. "
-                    "Return only the requested JSON object. Use null when a property "
-                    "depends on context, is ambiguous, or you are not confident. "
-                    "Interpret each property in its ordinary, common meaning."
-                ),
-            },
-            {
-                "role": "user",
-                "content": (
-                    f"Generate attributes for the English concept: {word!r}. "
-                    "For 'found_indoors', use commonly found indoors. "
-                    "For 'portable', use whether one person can normally carry it. "
-                    "For 'alive', use whether the concept itself is a living organism. "
-                    "For 'is_food', include food or drink."
-                ),
-            },
-        ],
-        format=schema,
-        options={"temperature": 0.1},
-    )
-
-    raw = response["message"]["content"]
-    data = json.loads(raw)
-    cleaned = {}
-    for key in properties:
-        value = data.get(key)
-        cleaned[key] = value if isinstance(value, bool) else None
-    return cleaned
+        with urllib.request.urlopen(req,timeout=90) as r: result=json.loads(r.read().decode())
+    except urllib.error.URLError as e:
+        raise RuntimeError("Cannot reach Ollama. Start Ollama and check OLLAMA_URL. "+str(e))
+    parsed=json.loads(result.get("response","{}"))
+    attrs=parsed.get("attributes",parsed)
+    return {k:(attrs.get(k) if attrs.get(k) in (True,False,None) else None) for k in QUESTIONS}
